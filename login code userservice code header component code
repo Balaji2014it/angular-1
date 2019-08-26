@@ -1,0 +1,148 @@
+    import { Component } from '@angular/core';
+
+import { userService } from '../user.service';
+import { Router } from '@angular/router';
+
+@Component({
+    template:`<h1>Login</h1>
+    
+
+    <div class = "col-md-5">
+    <div *ngIf="error" class ="alert alert-danger">Wrong username or password</div>
+        <div class ="form-group">
+        <input type="text" placeholder="Username" class="form-control" [(ngModel)]="user.username"/>
+   
+        </div>
+    
+        <div class ="form-group">
+            <input type="password" placeholder="Password" class="form-control" [(ngModel)]="user.password"/>
+    
+            </div>
+    
+        <div class="form-group">
+            <button class="btn btn-success" (click)="onLogin()">Login</button>
+            </div>
+    </div>
+    
+    
+    `
+})
+
+
+export class LoginComponent{
+
+    user : any = {};
+    
+    error: boolean=false;
+
+constructor(private UserSvc:userService,private router:Router){}
+
+onLogin(){
+    this.UserSvc.login(this.user)
+    .subscribe(
+        res=>{
+            this.error=false;
+            this.UserSvc.saveToken(res.token);
+            this.router.navigate(["/products"]);
+        
+        },
+            
+        err=>{
+            this.error=true
+            });
+}
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    //////header component.ts
+    
+    
+    import { Component} from '@angular/core';
+import { Router } from '@angular/router';
+import { userService } from '../userlist/user.service';
+
+@Component({
+  selector: 'app-header',
+  template: `
+  "<header class="container">
+  <nav class="navbar navbar-expand-lg bg-dark" >
+  <h3 class ="navbar-brand">My Products app</h3>
+<ul class ="navbar-nav mr-auto">
+<li class ="nav-item"><a class="nav-link" routerLink="/">Home</a><li>
+<li class ="nav-item"><a class="nav-link" routerLink="/about" >About</a><li>
+<li class ="nav-item"><a class="nav-link" routerLink="/products" >Products</a><li>
+<li class ="nav-item"><a class="nav-link" routerLink="/contact" >Contact</a><li>
+</ul>
+<button *ngIf="!isAuthenticated" routerLink="/login" class="btn-sm btn-success">Login</button>
+&nbsp;
+<button *ngIf="isAuthenticated" class="btn-sm btn-success" (click)="onLogout()">Logout</button>
+</nav>
+</header>
+
+  `
+})
+export class HeaderComponent {
+
+isAuthenticated:boolean;
+  constructor(private router:Router,private userSvc: userService){
+this.userSvc.isAuthenticated.subscribe(val=>this.isAuthenticated=val);
+  }
+
+onLogout(){
+  
+ this.userSvc.onLogout()
+this.router.navigate(['/login']);
+}
+
+}
+
+
+
+////////user.service.ts
+
+
+import {Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, Subject } from 'rxjs';
+
+
+@Injectable()
+
+
+export class userService{
+
+    isAuthenticated:Subject<boolean>;
+    
+    constructor(private http: HttpClient) { 
+this.isAuthenticated=new Subject<boolean>();
+    }
+
+    login(user : any):Observable<any>{
+       return this.http.post('http://exp-rest-api.herokuapp.com/api/users/login', user);
+    }
+
+    saveToken(token){
+        localStorage.setItem('token',token);
+          this.isAuthenticated.next(true)  
+    }
+
+    onLogout(){
+      localStorage.removeItem("token");
+this.isAuthenticated.next(false);
+
+    }      
+}
+
+
+
